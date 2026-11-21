@@ -1,0 +1,28 @@
+# Quelle für die Metadaten im Contao Manager (contao/package-metadata).
+# Änderungen hier werden von Claude in den Fork übertragen.
+
+de:
+    title: Galerie-Metadaten
+    description: >
+        Im Inhaltselement „Galerie“ lassen sich Titel, Alternativtext, Link und Bildunterschrift einzelner Bilder überschreiben – nur für diese eine Galerie. Die Angaben in der Dateiverwaltung bleiben unverändert und gelten überall sonst weiter.
+
+        Jedes Bild der Auswahl erscheint im Element als aufklappbarer Block mit Vorschau; die Originalwerte stehen als Platzhalter daneben. Die Zuordnung erfolgt über die Datei, Umsortieren und Verschieben der Bilder schadet deshalb nicht.
+    keywords:
+        - Galerie
+        - Metadaten
+        - Bildunterschrift
+        - Alternativtext
+        - Bildtitel
+
+en:
+    title: Gallery metadata
+    description: >
+        Override title, alternative text, link and caption of single images in the "Gallery" content element – for this one gallery only. The metadata in the file manager stays untouched and still applies everywhere else.
+
+        Each selected image is shown in the element as a collapsible block with a preview; the original values appear as placeholders. Overrides are bound to the file, so reordering or moving images does no harm.
+    keywords:
+        - gallery
+        - metadata
+        - caption
+        - alt text
+        - image title

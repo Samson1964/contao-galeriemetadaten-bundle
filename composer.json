@@ -1,0 +1,54 @@
+{
+    "name": "schachbulle/contao-galeriemetadaten-bundle",
+    "type": "contao-bundle",
+    "description": "Abweichende Metadaten (Titel, Alternativtext, Link, Bildunterschrift) für einzelne Bilder im Contao-Galerie-Element, nur für diese eine Galerie. Für Contao 4.13 und 5.7.",
+    "keywords": [
+        "contao",
+        "galerie",
+        "gallery",
+        "metadaten",
+        "metadata",
+        "bildunterschrift",
+        "alternativtext"
+    ],
+    "homepage": "https://github.com/Samson1964/contao-galeriemetadaten-bundle",
+    "license": "LGPL-3.0-or-later",
+    "authors": [
+        {
+            "name": "Frank Hoppe",
+            "homepage": "https://www.schachbulle.de/"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "contao/core-bundle": "^4.13 || ^5.7",
+        "symfony/config": "^5.4 || ^6.4 || ^7.0",
+        "symfony/dependency-injection": "^5.4 || ^6.4 || ^7.0",
+        "symfony/http-kernel": "^5.4 || ^6.4 || ^7.0"
+    },
+    "conflict": {
+        "contao/core": "*",
+        "contao/manager-plugin": "<2.0 || >=3.0"
+    },
+    "require-dev": {
+        "contao/manager-plugin": "^2.0",
+        "phpunit/phpunit": "^9.6 || ^10.0"
+    },
+    "extra": {
+        "contao-manager-plugin": "Schachbulle\\ContaoGaleriemetadatenBundle\\ContaoManager\\Plugin"
+    },
+    "autoload": {
+        "psr-4": {
+            "Schachbulle\\ContaoGaleriemetadatenBundle\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Schachbulle\\ContaoGaleriemetadatenBundle\\Tests\\": "tests/"
+        }
+    },
+    "support": {
+        "issues": "https://github.com/Samson1964/contao-galeriemetadaten-bundle/issues",
+        "source": "https://github.com/Samson1964/contao-galeriemetadaten-bundle"
+    }
+}
