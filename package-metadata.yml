@@ -1,12 +1,15 @@
 # Quelle für die Metadaten im Contao Manager (contao/package-metadata).
 # Änderungen hier werden von Claude in den Fork übertragen.
+# Eingereicht mit contao/package-metadata#869. Komposita wie
+# „Bildunterschrift“ oder „Alternativtext“ stehen bewusst nur in den
+# Schlagwörtern: Die Rechtschreibprüfung dort kennt sie nicht.
 
 de:
     title: Galerie-Metadaten
     description: >
-        Im Inhaltselement „Galerie“ lassen sich Titel, Alternativtext, Link und Bildunterschrift einzelner Bilder überschreiben – nur für diese eine Galerie. Die Angaben in der Dateiverwaltung bleiben unverändert und gelten überall sonst weiter.
+        Im Inhaltselement „Galerie“ lassen sich Titel, alternativer Text, Link und Beschriftung einzelner Bilder ändern – nur für diese eine Galerie. Die Angaben in der Dateiverwaltung bleiben unverändert und gelten überall sonst weiter. Dasselbe Bild kann so in mehreren Galerien jeweils andere Texte tragen.
 
-        Jedes Bild der Auswahl erscheint im Element als aufklappbarer Block mit Vorschau; die Originalwerte stehen als Platzhalter daneben. Die Zuordnung erfolgt über die Datei, Umsortieren und Verschieben der Bilder schadet deshalb nicht.
+        Jedes ausgewählte Bild erscheint im Element mit einer kleinen Vorschau; die bisherigen Werte stehen als Platzhalter im Feld. Die Angaben hängen an der Datei, nicht an ihrer Position: Eine neue Reihenfolge oder ein Verschieben der Bilder schadet nicht.
     keywords:
         - Galerie
         - Metadaten
@@ -17,9 +20,9 @@ de:
 en:
     title: Gallery metadata
     description: >
-        Override title, alternative text, link and caption of single images in the "Gallery" content element – for this one gallery only. The metadata in the file manager stays untouched and still applies everywhere else.
+        Change title, alternative text, link and caption of single images in the "Gallery" content element – for this one gallery only. The metadata in the file manager stays untouched and still applies everywhere else. The same image can therefore carry different texts in several galleries.
 
-        Each selected image is shown in the element as a collapsible block with a preview; the original values appear as placeholders. Overrides are bound to the file, so reordering or moving images does no harm.
+        Each selected image is shown in the element with a small preview; the current values appear as placeholders. Changes are bound to the file, not to its position, so reordering or moving the images does no harm.
     keywords:
         - gallery
         - metadata
