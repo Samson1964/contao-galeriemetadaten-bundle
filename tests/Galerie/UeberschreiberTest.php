@@ -92,6 +92,48 @@ class UeberschreiberTest extends TestCase
     }
 
     /**
+     * Ein vollständiger, gültiger wichtiger Teil wird übernommen; Kommas als
+     * Dezimaltrenner sind erlaubt.
+     */
+    public function testWichtigerTeilGueltig(): void
+    {
+        $this->assertSame(
+            ['importantPartX' => 0.1, 'importantPartY' => 0.2, 'importantPartWidth' => 0.5, 'importantPartHeight' => 0.25],
+            Ueberschreiber::wichtigerTeil(['importantPartX' => '0.1', 'importantPartY' => '0,2', 'importantPartWidth' => 0.5, 'importantPartHeight' => '0.25', 'title' => 'egal']),
+        );
+    }
+
+    /**
+     * Unvollständige, leere oder außerhalb des Bildes liegende Angaben werden
+     * verworfen; kleine Rundungsüberhänge werden gekappt.
+     */
+    public function testWichtigerTeilUngueltig(): void
+    {
+        $this->assertNull(Ueberschreiber::wichtigerTeil(['importantPartX' => '0.1', 'importantPartY' => '0.1', 'importantPartWidth' => '0.5']));
+        $this->assertNull(Ueberschreiber::wichtigerTeil(['importantPartX' => '', 'importantPartY' => '', 'importantPartWidth' => '', 'importantPartHeight' => '']));
+        $this->assertNull(Ueberschreiber::wichtigerTeil(['importantPartX' => '0.6', 'importantPartY' => '0', 'importantPartWidth' => '0.5', 'importantPartHeight' => '1']));
+        $this->assertNull(Ueberschreiber::wichtigerTeil(['importantPartX' => '0', 'importantPartY' => '0', 'importantPartWidth' => '0', 'importantPartHeight' => '1']));
+        $this->assertNull(Ueberschreiber::wichtigerTeil(['importantPartX' => 'abc', 'importantPartY' => '0', 'importantPartWidth' => '1', 'importantPartHeight' => '1']));
+
+        $gekappt = Ueberschreiber::wichtigerTeil(['importantPartX' => '0.5', 'importantPartY' => '0', 'importantPartWidth' => '0.5005', 'importantPartHeight' => '1']);
+        $this->assertSame(0.5, $gekappt['importantPartWidth']);
+    }
+
+    /**
+     * Der wichtige Teil landet nie in der meta-Spalte.
+     */
+    public function testWichtigerTeilNichtInMeta(): void
+    {
+        $neu = Ueberschreiber::zusammenfuehren(
+            ['de' => ['title' => 'A']],
+            ['title' => 'B', 'importantPartX' => '0.1', 'importantPartY' => '0.1', 'importantPartWidth' => '0.5', 'importantPartHeight' => '0.5'],
+            ['de'],
+        );
+
+        $this->assertSame(['de' => ['title' => 'B']], $neu);
+    }
+
+    /**
      * Nur erlaubte Felder und nur Zeichenketten bleiben übrig.
      */
     public function testFelderBereinigenFiltert(): void

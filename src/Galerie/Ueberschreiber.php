@@ -21,6 +21,10 @@ use Contao\Validator;
 /**
  * Spielt abweichende Metadaten für die Dauer einer Galerie-Ausgabe ein.
  *
+ * Neben den Metadaten lässt sich auch der wichtige Teil eines Bildes (die vier
+ * importantPart-Spalten) je Galerie ändern; er wirkt nur bei Bildgrößen mit
+ * Beschnitt.
+ *
  * Funktionsweise: Contao hält je Anfrage genau eine Instanz eines Modells pro
  * Datensatz im Modell-Register. Wird die Spalte „meta“ eines FilesModel
  * verändert (ohne zu speichern), gilt das Feld als modifiziert. Spätere
@@ -45,10 +49,19 @@ final class Ueberschreiber
     public const LEEREN = '{{empty}}';
 
     /**
-     * Gesicherte Originalwerte als Paare aus Modell und ursprünglicher
-     * meta-Spalte, in der Reihenfolge der Änderung.
+     * Spalten von tl_files, die den wichtigen Teil eines Bildes beschreiben.
+     * Werte sind Anteile von 0 bis 1 an Breite bzw. Höhe des Originals (Format
+     * seit Contao 4.8, in 4.13 und 5.7 gleich). Gelesen werden sie beim
+     * Skalieren in ImageFactory::createImportantPart() über findByPath() –
+     * also ebenfalls aus dem Modell-Register.
+     */
+    public const WICHTIGER_TEIL = ['importantPartX', 'importantPartY', 'importantPartWidth', 'importantPartHeight'];
+
+    /**
+     * Gesicherte Originalwerte als Tripel aus Modell, Spaltenname und
+     * ursprünglichem Wert, in der Reihenfolge der Änderung.
      *
-     * @var list<array{0: FilesModel, 1: mixed}>
+     * @var list<array{0: FilesModel, 1: string, 2: mixed}>
      */
     private array $sicherung = [];
 
@@ -87,27 +100,95 @@ final class Ueberschreiber
                 continue;
             }
 
-            $original = $model->meta;
-            $meta = self::zusammenfuehren(StringUtil::deserialize($original, true), $felder, $sprachen);
+            $wichtigerTeil = self::wichtigerTeil($felder);
+            $metafelder = array_diff_key($felder, array_flip(self::WICHTIGER_TEIL));
 
-            $this->sicherung[] = [$model, $original];
-            $model->meta = serialize($meta);
+            if ([] !== $metafelder) {
+                $meta = self::zusammenfuehren(StringUtil::deserialize($model->meta, true), $metafelder, $sprachen);
+                $this->setzen($model, 'meta', serialize($meta));
+            }
+
+            // Der wichtige Teil gilt sprachunabhängig und wird nur als
+            // vollständiger Satz aus vier Werten übernommen.
+            if (null !== $wichtigerTeil) {
+                foreach ($wichtigerTeil as $spalte => $wert) {
+                    $this->setzen($model, $spalte, $wert);
+                }
+            }
         }
     }
 
     /**
-     * Setzt alle durch anwenden() veränderten Modelle auf ihre ursprüngliche
-     * meta-Spalte zurück.
+     * Ändert eine Spalte eines Dateimodells und merkt sich den Ausgangswert.
+     *
+     * Das Zuweisen über __set markiert die Spalte als modifiziert; nur dadurch
+     * überlebt der Wert, wenn der Core dieselbe Datei später erneut abfragt
+     * (Model::mergeRow() überschreibt nur unveränderte Spalten).
+     *
+     * @param FilesModel $model  Das Dateimodell aus dem Register
+     * @param string     $spalte Spaltenname in tl_files
+     * @param mixed      $wert   Neuer Wert (nur im Speicher)
+     */
+    private function setzen(FilesModel $model, string $spalte, $wert): void
+    {
+        $this->sicherung[] = [$model, $spalte, $model->$spalte];
+        $model->$spalte = $wert;
+    }
+
+    /**
+     * Prüft und liefert den abweichenden wichtigen Teil eines Bildes.
+     *
+     * Übernommen wird er nur, wenn alle vier Werte vorhanden und zahlig sind,
+     * Breite und Höhe größer als null sind und das Rechteck innerhalb des Bildes
+     * liegt (kleine Rundungsüberhänge bis 0,001 werden geduldet und gekappt).
+     * Ein halber oder kaputter Satz wird verworfen, damit nie ein unsinniger
+     * Ausschnitt entsteht.
+     *
+     * @param array<string, mixed> $felder Abweichungen eines Bildes
+     *
+     * @return array<string, float>|null Die vier Werte (Schlüssel wie WICHTIGER_TEIL) oder null
+     */
+    public static function wichtigerTeil(array $felder): ?array
+    {
+        $werte = [];
+
+        foreach (self::WICHTIGER_TEIL as $spalte) {
+            $wert = $felder[$spalte] ?? null;
+
+            if (!\is_scalar($wert) || '' === trim((string) $wert) || !is_numeric(str_replace(',', '.', (string) $wert))) {
+                return null;
+            }
+
+            $werte[$spalte] = (float) str_replace(',', '.', (string) $wert);
+        }
+
+        [$x, $y, $breite, $hoehe] = array_values($werte);
+
+        if ($x < 0 || $y < 0 || $breite <= 0 || $hoehe <= 0 || $x + $breite > 1.001 || $y + $hoehe > 1.001) {
+            return null;
+        }
+
+        return [
+            'importantPartX' => round($x, 6),
+            'importantPartY' => round($y, 6),
+            'importantPartWidth' => round(min($breite, 1 - $x), 6),
+            'importantPartHeight' => round(min($hoehe, 1 - $y), 6),
+        ];
+    }
+
+    /**
+     * Setzt alle durch anwenden() veränderten Spalten (Metadaten und wichtiger
+     * Teil) auf ihre ursprünglichen Werte zurück.
      *
      * Die Rückgabe erfolgt in umgekehrter Reihenfolge, damit auch eine doppelt
-     * veränderte Datei sicher beim Ausgangswert landet. Das Feld bleibt im
-     * Modell als „modifiziert“ markiert; ein späteres save() würde aber nur den
-     * Originalwert erneut schreiben und ist damit unschädlich.
+     * veränderte Spalte sicher beim Ausgangswert landet. Die Spalten bleiben im
+     * Modell als „modifiziert“ markiert; ein späteres save() würde aber nur die
+     * Originalwerte erneut schreiben und ist damit unschädlich.
      */
     public function wiederherstellen(): void
     {
-        foreach (array_reverse($this->sicherung) as [$model, $original]) {
-            $model->meta = $original;
+        foreach (array_reverse($this->sicherung) as [$model, $spalte, $original]) {
+            $model->$spalte = $original;
         }
 
         $this->sicherung = [];
@@ -205,9 +286,10 @@ final class Ueberschreiber
      */
     public static function zusammenfuehren(array $meta, array $ueberschreibung, array $sprachen): array
     {
+        // Der wichtige Teil hat eigene Spalten und gehört nicht in „meta“
         $ueberschreibung = array_map(
             static fn (string $wert): string => self::LEEREN === $wert ? '' : $wert,
-            self::felderBereinigen($ueberschreibung),
+            self::felderBereinigen(array_diff_key($ueberschreibung, array_flip(self::WICHTIGER_TEIL))),
         );
 
         if ([] === $ueberschreibung) {
